@@ -22,6 +22,11 @@
   <link rel="stylesheet" href="<?= base_url()?>assets/dist/css/adminlte.min.css">
   <!-- overlayScrollbars -->
   <link rel="stylesheet" href="<?= base_url()?>assets/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+  <style>
+    .ar{
+      margin-left: 10px;
+    }
+  </style>
   <!-- Daterange picker -->
   <link rel="stylesheet" href="<?= base_url()?>assets/plugins/daterangepicker/daterangepicker.css">
   <!-- summernote -->
@@ -80,10 +85,26 @@
             </a>
           </li>
           <li class="nav-item">
+            <a href="<?= base_url('User')?>" class="nav-link <?= $title == 'user' ? 'active' : ''?>">
+              <i class="nav-icon fas fa-user"></i>
+              <p>
+               User
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="<?= base_url('Kalkulator/data_kalkulator')?>" class="nav-link <?= $title == 'data kalkulator' ? 'active' : ''?>">
               <i class="nav-icon fas fa-th"></i>
               <p>
                 Kalkulator
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="<?= base_url('Penawaran')?>" class="nav-link <?= $title == 'penawaran' ? 'active' : ''?>">
+              <i class="nav-icon fas fa-briefcase"></i>
+              <p>
+                Penawaran
               </p>
             </a>
           </li>
@@ -178,7 +199,60 @@
 <!-- AdminLTE App -->
 <script src="<?= base_url()?>assets/dist/js/adminlte.js"></script>
 <script src="<?= base_url()?>assets/dist/js/pages/dashboard.js"></script>
+<script src="<?= base_url()?>assets/dist/js/jquery.mask.min.js"></script>
+<script src="<?= base_url()?>assets/dist/js/terbilang.js"></script>
+<script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
 <script>
+    $(function() {
+        $('#formselector').change(function(){
+            $('.forms').hide();
+            $('#' + $(this).val()).show();
+        });
+    });
+    $(document).ready(function(){ // Ketika halaman sudah diload dan siap
+//Add Form
+      $("#plus").click(function(){
+          $("#form").append(
+            "<div class='row'>"+
+                  "<div class='col-md-3'>"+
+                        "<input type='text' id='item' class='form-control mt-3' name='item[]' placeholder='Item'>"+
+                    "</div>"+
+                    "<div class='col-md-3'>"+
+                        "<input type='text' class='form-control mt-3' name='role[]' id='role1' placeholder='Role'>"+
+                  "</div>"+
+              "</div>"
+          );
+      });
+      $("#reset").click(function(){
+      $("#form").html(""); 
+    });
+    $("#btn-tambah-form").click(function(){ // Ketika tombol Tambah Data Form di klik
+      
+      // Kita akan menambahkan form dengan menggunakan append
+      // pada sebuah tag div yg kita beri id insert-form
+      $("#insert-form").append(
+        "<div class='row' style='margin-left:20px'>" +
+        "<div class='col-md-3'>" +
+        "<input type='text' class='form-control mt-3' name='item[]' placeholder='Item'>" +
+        "</div>" +
+        "<div class='col-md-3'>" +
+        "<input type='text' class='form-control mt-3' name='role[]' placeholder='Role'>" +
+        "</div>" +
+        "<div class='col-md-3'>" +
+        "<input type='text' class='form-control mt-3 qty[]' name='qty' placeholder='QTY'>" +
+        "</div>" +
+        "<div class='col-md-3'>" +
+        "<input type='text' class='form-control mt-3 sum' name='harga[]' placeholder='Harga' id='hargaNext'>" +
+        "</div>" +
+        "</div>");
+    });
+    
+    // Buat fungsi untuk mereset form ke semula
+    $("#btn-reset-form").click(function(){
+      $("#insert-form").html(""); // Kita kosongkan isi dari div insert-form
+      $("#jumlah-form").val("1"); // Ubah kembali value jumlah form menjadi 1
+    });
+  });
   $(document).ready(function(){
     $("#lama,#kuantitas").keyup(function(){
       let lama = $("#lama").val();
@@ -224,11 +298,67 @@
         hasil = $("#hasil").val(`${formatRupiah(res)}`);
       }
     });
+    $("#qty1,#harga,#diskon").keyup(function(){
+      let hargaAwal = $("#harga").val();
+      let b = "Borongan";
+      let qty = $("#qty1").val();
+        if(qty == b){
+         let diskon = $("#diskon").val();
+         let disc = hargaAwal - (diskon / 100 * hargaAwal);
+         let pajak = disc * 0.1;
+         let total =disc + pajak;
+         $("#pajak").val(`${formatRupiah(pajak)}`);
+         $("#total").val(`${formatRupiah(total)}`);
+        }else{
+          hargaFinal = parseInt(hargaAwal) * parseInt(qty);
+          diskon = $("#diskon").val();
+          disc = hargaFinal - (diskon / 100 * hargaFinal);
+          pajak = disc * 0.1;
+          total =disc + pajak;
+          $("#pajak").val(`${formatRupiah(pajak)}`);
+          $("#total").val(`${formatRupiah(total)}`);
+        }
+    });
+    $("#hargaEdit,#diskonEdit").keyup(function(){
+      let harga = $("#hargaEdit").val();
+      let diskon = $("#diskonEdit").val();
+      let disc = harga - (diskon / 100 * harga);
+      let pajak = disc * 0.11;
+      let total =disc + pajak;
+      $("#pajakEdit").val(`${formatRupiah(pajak)}`);
+      $("#totalEdit").val(`${formatRupiah(total)}`);
+    });
+    $("#qty2").keyup(function(){
+      let harga = $("#hargaa").val();
+    });
+
+  });
+
+  $('#insert-form').on('input','.sum',function(){
+    var totalSum = 0;
+    $('#insert-form .sum').each(function(){
+      var inputVal = $(this).val();
+      if($.isNumeric(inputVal)){
+        let qty = $("#qty2").val();
+        let harga = $("#hargaa").val();
+        let hasil = parseInt(inputVal) * parseInt(qty)
+        let hasil2 = parseInt(harga) * parseInt(qty)
+        totalSum += parseFloat(hasil) + parseInt(hasil2);
+        $('#diskonn,#hargaa,.sum,.qty').keyup(function(){
+          let diskon = $("#diskonn").val();
+          let disc = totalSum - (diskon / 100 * totalSum);
+          let pajak = disc * 0.11;
+          let total =parseInt(disc) + parseInt(pajak);
+          $("#pajakk").val(`${formatRupiah(pajak)}`);
+          $("#totall").val(`${formatRupiah(total)}`);
+        })
+      }
+    });
   });
   const formatRupiah = (money) => {
-   return new Intl.NumberFormat('id-ID',
-     { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }
-   ).format(money);
+    return new Intl.NumberFormat('id-ID',
+    { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }
+    ).format(money);
   }
 </script>
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
@@ -242,11 +372,32 @@
 <script src="<?= base_url();?>assets/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
 <script src="<?= base_url();?>assets/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
 <script src="<?= base_url();?>assets/plugins/jszip/jszip.min.js"></script>
-<script src="<?= base_url();?>assets/plugins/pdfmake/pdfmake.min.js"></script>
-<script src="<?= base_url();?>assets/plugins/pdfmake/vfs_fonts.js"></script>
-<script src="<?= base_url();?>assets/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
-<script src="<?= base_url();?>assets/plugins/datatables-buttons/js/buttons.print.min.js"></script>
-<script src="<?= base_url();?>assets/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+<script src="https://cdn.ckeditor.com/4.17.1/standard/ckeditor.js"></script>
+<script>
+  imgInpp.onchange = evt => {
+  const [file] = imgInpp.files
+  if (file) {
+    blah.src = URL.createObjectURL(file)
+  }
+}
+
+imgInp.onchange = evt => {
+  const [file] = imgInp.files
+  if (file) {
+    blahh.src = URL.createObjectURL(file)
+  }
+}
+</script>
+<script>
+  CKEDITOR.replace('noteBorongan',{
+    width: '80%',
+      height: 100,
+  });
+    CKEDITOR.replace('noteSatuan',{
+    width: '80%',
+      height: 100,
+  });
+</script>
 <script>
   $(function () {
     $("#example1").DataTable({
